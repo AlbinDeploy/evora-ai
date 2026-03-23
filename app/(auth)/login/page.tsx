@@ -1,9 +1,18 @@
-import { Suspense } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { AuthForm } from '@/components/auth-form';
 
-export default function LoginPage() {
+type LoginPageProps = {
+  searchParams: Promise<{
+    redirect?: string;
+    callbackUrl?: string;
+    error?: string;
+  }>;
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const params = await searchParams;
+
   return (
     <main className="flex min-h-screen items-center justify-center px-6 py-12">
       <Card className="w-full max-w-md p-8">
@@ -14,9 +23,12 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <Suspense fallback={<div className="text-sm text-slate-300">Memuat form...</div>}>
-          <AuthForm mode="login" />
-        </Suspense>
+        <AuthForm
+          mode="login"
+          redirect={params.redirect}
+          callbackUrl={params.callbackUrl}
+          error={params.error}
+        />
 
         <div className="mt-6 flex justify-between text-sm text-slate-300">
           <Link href="/forgot-password">Lupa password</Link>
