@@ -7,16 +7,26 @@ import { runGeminiStream } from '@/lib/gemini';
 
 const SYSTEM_PROMPT = `Kamu adalah Evora AI. Gaya bicara santai, gaul seperlunya, ramah, sopan, dan fokus bantu manusia. Kalau user minta coding, kasih jawaban rapi dan production-minded. Kalau user upload file, pakai file itu sebagai konteks. Jangan roleplay aneh-aneh.`;
 
+type ChatRequestBody = {
+  chatId?: unknown;
+  message?: unknown;
+  uploadIds?: unknown;
+};
+
 export async function POST(request: Request) {
   const user = await getCurrentUser();
+
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = await request.json();
+  const body: ChatRequestBody = await request.json();
+
   const chatId = typeof body.chatId === 'string' ? body.chatId : 'new';
   const message = typeof body.message === 'string' ? body.message : '';
-  const uploadIds = Array.isArray(body.uploadIds) ? body.uploadIds.filter((id): id is string => typeof id === 'string') : [];
+  const uploadIds = Array.isArray(body.uploadIds)
+    ? body.uploadIds.filter((id: unknown): id is string => typeof id === 'string')
+    : [];
 
   const cleanMessage = message.trim();
 
@@ -25,6 +35,7 @@ export async function POST(request: Request) {
   }
 
   let finalChatId = chatId;
+
   if (!finalChatId || finalChatId === 'new') {
     const [chat] = await db
       .insert(chats)
@@ -54,11 +65,7 @@ export async function POST(request: Request) {
     fileContext.push('Konteks file upload dari user:');
 
     for (const file of records) {
-      if (
-        !imageBase64 &&
-        file.mimeType.startsWith('image/') &&
-        file.base64Data
-      ) {
+      if (!imageBase64 && file.mimeType.startsWith('image/') && file.base64Data) {
         imageBase64 = file.base64Data;
         mimeType = file.mimeType;
         fileContext.push(`Gambar terlampir: ${file.originalName}`);
@@ -107,6 +114,7 @@ export async function POST(request: Request) {
       try {
         for await (const chunk of result.stream) {
           const text = chunk.text();
+
           if (!text) continue;
 
           fullText += text;
