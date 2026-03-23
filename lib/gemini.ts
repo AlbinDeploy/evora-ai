@@ -40,11 +40,10 @@ export async function streamGemini(params: {
     },
   ];
 
-  for (let i = 0; i < keys.length; i++) {
+  for (const key of keys) {
     try {
-      const client = getClient(keys[i]);
+      const client = getClient(key);
       const model = client.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
       return await model.generateContentStream({ contents });
     } catch (error) {
       lastError = error;
@@ -53,3 +52,5 @@ export async function streamGemini(params: {
 
   throw lastError ?? new Error('All Gemini API keys failed');
 }
+
+export const runGeminiStream = streamGemini;
